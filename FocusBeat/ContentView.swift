@@ -14,24 +14,42 @@ struct ContentView: View{
 
     var body: some View {
         VStack {
+            Spacer()
+            
             Text(formatTime(timeRemaining))
-                .font(.system(size: 64, weight:  .bold, design: .monospaced))
+                .font(.system(size: 64, weight: .bold, design: .monospaced))
+                .foregroundStyle(isRunning ? Color.white : Color.black)
             
             Button {
-                
+                startTimer()
             }label: {
                 Text(isRunning ? "Pause" : "Start")
+                    .font(.title)
                     .padding()
-                    .frame(width: 100)
-                    .background(isRunning ? Color.red : Color.green)
-                    .foregroundStyle(.white)
+                    .frame(width: 150)
+                    .background(isRunning ? Color.white : Color.black)
+                    .foregroundStyle(isRunning ? Color.black : Color.white)
+                    .cornerRadius(10)
+            }
+            
+            Spacer()
+            
+            Button {
+                resetTimer()
+            }label: {
+                Text("Reset")
+                    .font(.title2)
+                    .padding()
+                    .frame(width: 150)
+                    .foregroundStyle(isRunning ? Color.white : Color.black)
                     .cornerRadius(10)
             }
             
             
             
         }
-        .padding()
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(isRunning ? Color.black : Color.white)
     }
     
     
@@ -48,5 +66,30 @@ extension ContentView {
         return String(format: "%02d:%02d", minutes, secs)
     }
     
+    func startTimer() {
+        DispatchQueue.main.async{
+            if isRunning {
+                timer?.invalidate()
+                timer = nil
+                isRunning = false
+            }else {
+                isRunning = true
+                timer = Timer.scheduledTimer(withTimeInterval: 1.0,repeats: true){_ in
+                    if timeRemaining > 0{
+                        timeRemaining -= 1
+                    }else {
+                        timer?.invalidate()
+                        isRunning = false
+                    }
+                }
+            }
+        }
+    }
+    
+    func resetTimer() {
+        timer?.invalidate()
+        isRunning = false
+        timeRemaining = 1500
+    }
     
 }
