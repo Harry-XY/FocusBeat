@@ -8,12 +8,18 @@
 import SwiftUI
 
 struct ContentView: View{
-@State private var timeRemaining = 25 * 60
-@State private var isRunning = false
-@State private var timer: Timer? = nil
+    @State private var timeRemaining = 25 * 60
+    @State private var isRunning = false
+    @State private var timer: Timer? = nil
+    
+    
 
     var body: some View {
         VStack {
+            Text("Focus Beat")
+                .font(.title)
+                .bold()
+            
             Spacer()
             
             Text(formatTime(timeRemaining))
@@ -23,13 +29,21 @@ struct ContentView: View{
             Button {
                 startTimer()
             }label: {
-                Text(isRunning ? "Pause" : "Start")
-                    .font(.title)
-                    .padding()
-                    .frame(width: 150)
-                    .background(isRunning ? Color.white : Color.black)
-                    .foregroundStyle(isRunning ? Color.black : Color.white)
-                    .cornerRadius(10)
+                HStack{
+                    if isRunning{
+                        Image(systemName: "pause")
+                        Text("pause")
+                    }else{
+                        Image(systemName: "play")
+                        Text("Start")
+                    }
+                }
+                .font(.title)
+                .padding()
+                .frame(width: 150)
+                .background(isRunning ? Color.white : Color.black)
+                .foregroundStyle(isRunning ? Color.black : Color.white)
+                .cornerRadius(10)
             }
             
             Spacer()
@@ -37,16 +51,16 @@ struct ContentView: View{
             Button {
                 resetTimer()
             }label: {
-                Text("Reset")
-                    .font(.title2)
-                    .padding()
-                    .frame(width: 150)
-                    .foregroundStyle(isRunning ? Color.white : Color.black)
-                    .cornerRadius(10)
+                HStack{
+                    Image(systemName: "arrow.clockwise")
+                    Text("Reset")
+                }
+                .font(.title2)
+                .padding()
+                .frame(width: 150)
+                .foregroundStyle(isRunning ? Color.white : Color.black)
+                .cornerRadius(10)
             }
-            
-            
-            
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(isRunning ? Color.black : Color.white)
@@ -66,19 +80,23 @@ extension ContentView {
         return String(format: "%02d:%02d", minutes, secs)
     }
     
+    
     func startTimer() {
-        DispatchQueue.main.async{
-            if isRunning {
-                timer?.invalidate()
-                timer = nil
-                isRunning = false
-            }else {
-                isRunning = true
-                timer = Timer.scheduledTimer(withTimeInterval: 1.0,repeats: true){_ in
-                    if timeRemaining > 0{
+        if isRunning {
+            timer?.invalidate()
+            timer = nil
+            isRunning = false
+        } else {
+            isRunning = true
+            timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
+                if timeRemaining > 0 {
+                    DispatchQueue.main.async {
                         timeRemaining -= 1
-                    }else {
+                    }
+                } else {
+                    DispatchQueue.main.async {
                         timer?.invalidate()
+                        timer = nil
                         isRunning = false
                     }
                 }
