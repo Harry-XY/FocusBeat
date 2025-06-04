@@ -13,13 +13,15 @@ struct ContentView: View{
     @State private var timer: Timer? = nil
     @State private var isBreakTime = false
     @State var isShowingSettingsView = false
+    @State var isShowingHistoryView = false
+    @State private var heartBeatAnimation = false
     @AppStorage("workDuration_seconds") var workDuration = 25 * 60
     @AppStorage("breakDuration_seconds") var breakDuration = 5 * 60
     
     var body: some View {
         NavigationStack{
             VStack {
-                Header
+                HeartBeat
                 
                 Spacer()
                 
@@ -32,19 +34,9 @@ struct ContentView: View{
                 ResetSkipButtons
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(isRunning ? Color.black : Color.white)
+            .background(isRunning ? Color.black : Color.dirty)
             .toolbar{
-                ToolbarItem(placement: .topBarLeading) {
-                    Button {
-                        isShowingSettingsView = true
-                    } label: {
-                        Image(systemName: "gearshape")
-                    }
-                    .foregroundStyle(isRunning ? Color.white : Color.black)
-                    .sheet(isPresented: $isShowingSettingsView) {
-                        SettingsView()
-                    }
-                }
+                appToolbarContent
             }
             .onChange(of: workDuration) { oldValue, newValue in
                 // 当 workDuration (专注时长设置) 改变时
@@ -62,168 +54,211 @@ struct ContentView: View{
     }
 }
 
-    #Preview {
-        ContentView()
+#Preview {
+    ContentView()
+}
+
+extension ContentView {
+    //MARK: -ToolBar
+    @ToolbarContentBuilder
+    private var appToolbarContent: some ToolbarContent {
+        ToolbarItem(placement: .topBarLeading) {
+            Button {
+                isShowingSettingsView = true
+            } label: {
+                Image(systemName: "gearshape")
+            }
+            .foregroundStyle(isRunning ? Color.white : Color.black)
+            .sheet(isPresented: $isShowingSettingsView) {
+                SettingsView()
+            }
+        }
+        
+        ToolbarItem(placement: .topBarTrailing) {
+            Button {
+                isShowingHistoryView = true
+            } label: {
+                Image(systemName: "list.bullet")
+            }
+            .foregroundStyle(isRunning ? Color.white : Color.black)
+            .sheet(isPresented: $isShowingHistoryView){
+                HistoryView()
+            }
+        }
     }
     
-    extension ContentView {
-        private var Header: some View {
-            Text("Focus Beat")
-                .font(.title)
-                .bold()
+    // MARK: - Beating Heart
+    private var HeartBeat: some View {
+        HStack{
+            Image(systemName: "heart.fill")
+                .foregroundStyle(.darkRed)
+                .scaleEffect(heartBeatAnimation ? 1    : 0.9) // 根据状态放大或恢复
+                .animation( // 添加动画效果
+                    Animation.easeInOut(duration: 0.35) // 动画曲线和时长
+                        .repeatForever(autoreverses: true), // 无限重复并自动反向
+                    value: heartBeatAnimation, // 动画依赖于 heartBeatAnimation 的变化
+                    )
+            Text("90 BMP")
+                .padding()
                 .foregroundStyle(isRunning ? Color.white : Color.black)
         }
-        
-        private var TimeZone: some View{
-            VStack{
-                Text(currentModeText)
-                    .font(.system(size: 30, weight: .bold, design: .monospaced))
-                    
-                
-                Text(formatTime(timeRemaining))
-                    .font(.system(size: 64, weight: .bold, design: .monospaced))
+        .onAppear { // 当视图出现时
+            self.heartBeatAnimation.toggle() // 触发初始动画状态改变
+        }
+        .font(.system(size: 30, weight: .bold, design: .monospaced))
+    }
+    
+    //MARK: -TimeZone
+    
+    private var TimeZone: some View{
+        VStack{
+            Text(currentModeText)
+                .font(.system(size: 30, weight: .bold, design: .monospaced))
+            
+            Text(formatTime(timeRemaining))
+                .font(.system(size: 80, weight: .bold, design: .monospaced))
+        }
+        .foregroundStyle(isRunning ? Color.white : Color.black)
+    }
+    
+    
+    var currentModeText: String {
+        if isBreakTime {
+            return "BREAK"
+        } else {
+            return "FOCUS"
+        }
+    }
+    
+    
+    
+    func formatTime(_ seconds: Int) -> String {
+        let minutes = seconds / 60
+        let secs = seconds % 60
+        return String(format: "%02d:%02d", minutes, secs)
+    }
+    //MARK: -Start
+    private var StartButton: some View{
+        Button {
+            startTimer()
+        }label: {
+            HStack{
+                if isRunning{
+                    Image(systemName: "pause")
+                    Text(dynamicStartButtonText)
+                }else{
+                    Image(systemName: "play")
+                    Text(dynamicStartButtonText)
+                }
             }
-                .foregroundStyle(isRunning ? Color.white : Color.black)
+            .font(.system(size: 20, weight: .bold, design: .monospaced))
+            .padding()
+            .frame(width: 200)
+            .background(isRunning ? Color.white : Color.black)
+            .foregroundStyle(isRunning ? Color.black : Color.white)
+            .cornerRadius(10)
         }
-        
-        
-        var currentModeText: String {
+    }
+    
+    
+    var dynamicStartButtonText: String {
+        if isRunning {
+            return "Pause"
+        } else {
             if isBreakTime {
-                return "BREAK"
+                return "Start Break"
             } else {
-                return "FOCUS"
+                return "Start Focus"
             }
         }
-        
-        
-        
-        func formatTime(_ seconds: Int) -> String {
-            let minutes = seconds / 60
-            let secs = seconds % 60
-            return String(format: "%02d:%02d", minutes, secs)
+    }
+    
+    func startTimer() {
+        if isRunning {
+            timer?.invalidate()
+            //.invalidate()：是 Timer 类型的方法，表示“使这个 Timer 失效”，也就是停止计时器。
+            timer = nil
+            isRunning = false
+        } else {
+            isRunning = true
+            timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
+                if timeRemaining > 0 {
+                    DispatchQueue.main.async {
+                        timeRemaining -= 1
+                    }
+                } else {
+                    DispatchQueue.main.async {
+                        // 1. 先停止当前计时器和更新 isRunning
+                        timer?.invalidate()
+                        timer = nil
+                        isRunning = false
+                        
+                        // 2. 然后根据 isBreakTime 的状态决定下一个周期
+                        if isBreakTime { // 如果当前是休息时间 (意味着休息结束了)
+                            // TODO: 设置为专注时间
+                            timeRemaining = workDuration // 准备下一个专注时间
+                            isBreakTime = false          // 切换到专注模式
+                        } else { // 如果当前是专注时间 (意味着专注结束了)
+                            // TODO: 设置为休息时间
+                            timeRemaining = breakDuration // 准备下一个休息时间
+                            isBreakTime = true           // 切换到休息模式
+                        }
+                    }
+                }
+            }
         }
-        //MARK: -Start
-        private var StartButton: some View{
+    }
+    
+    //MARK: -RestAndSkip
+    
+    private var ResetSkipButtons: some View {
+        HStack{
             Button {
-                startTimer()
+                resetTimer()
             }label: {
                 HStack{
-                    if isRunning{
-                        Image(systemName: "pause")
-                        Text(dynamicStartButtonText)
-                    }else{
-                        Image(systemName: "play")
-                        Text(dynamicStartButtonText)
-                    }
+                    Image(systemName: "arrow.clockwise")
+                    Text("Reset")
                 }
-                .font(.title2)
-                .padding()
-                .frame(width: 180)
-                .background(isRunning ? Color.white : Color.black)
-                .foregroundStyle(isRunning ? Color.black : Color.white)
-                .cornerRadius(10)
+                .font(.system(size: 20, weight: .bold, design: .monospaced))
+                .frame(width: 150)
+                .foregroundStyle(isRunning ? Color.white : Color.black)
+            }
+            
+            Button {
+                skipTimer()
+            }label: {
+                HStack{
+                    Image(systemName: "forward.end")
+                    Text("Skip")
+                }
+                .font(.system(size: 20, weight: .bold, design: .monospaced))
+                .frame(width: 150)
+                .foregroundStyle(isRunning ? Color.white : Color.black)
             }
         }
-        
-        
-        var dynamicStartButtonText: String {
-            if isRunning {
-                return "Pause"
-            } else {
-                if isBreakTime {
-                    return "Start Break"
-                } else {
-                    return "Start Focus"
-                }
-            }
-        }
-        
-        func startTimer() {
-            if isRunning {
-                timer?.invalidate()
-                //.invalidate()：是 Timer 类型的方法，表示“使这个 Timer 失效”，也就是停止计时器。
-                timer = nil
-                isRunning = false
-            } else {
-                isRunning = true
-                timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
-                    if timeRemaining > 0 {
-                        DispatchQueue.main.async {
-                            timeRemaining -= 1
-                        }
-                    } else {
-                        DispatchQueue.main.async {
-                            // 1. 先停止当前计时器和更新 isRunning
-                            timer?.invalidate()
-                            timer = nil
-                            isRunning = false
-                            
-                            // 2. 然后根据 isBreakTime 的状态决定下一个周期
-                            if isBreakTime { // 如果当前是休息时间 (意味着休息结束了)
-                                // TODO: 设置为专注时间
-                                timeRemaining = workDuration // 准备下一个专注时间
-                                isBreakTime = false          // 切换到专注模式
-                            } else { // 如果当前是专注时间 (意味着专注结束了)
-                                // TODO: 设置为休息时间
-                                timeRemaining = breakDuration // 准备下一个休息时间
-                                isBreakTime = true           // 切换到休息模式
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        
-        //MARK: -RestAndSkip
-        
-        private var ResetSkipButtons: some View {
-            HStack{
-                Button {
-                    resetTimer()
-                }label: {
-                    HStack{
-                        Image(systemName: "arrow.clockwise")
-                        Text("Reset")
-                    }
-                    .font(.title2)
-                    .frame(width: 150)
-                    .foregroundStyle(isRunning ? Color.white : Color.black)
-                }
-                
-                Button {
-                    skipTimer()
-                }label: {
-                    HStack{
-                        Image(systemName: "forward.end")
-                        Text("Skip")
-                    }
-                    .font(.title2)
-                    .frame(width: 150)
-                    .foregroundStyle(isRunning ? Color.white : Color.black)
-                }
-            }
-        }
-        
-        func resetTimer() {
-            timer?.invalidate()
-            timer = nil
-            isRunning = false
+    }
+    
+    func resetTimer() {
+        timer?.invalidate()
+        timer = nil
+        isRunning = false
+        timeRemaining = workDuration
+        isBreakTime = false
+    }
+    
+    func skipTimer() {
+        timer?.invalidate()
+        timer = nil
+        isRunning = false
+        if isBreakTime {
             timeRemaining = workDuration
             isBreakTime = false
+        }else{
+            timeRemaining = breakDuration
+            isBreakTime = true
         }
-        
-        func skipTimer() {
-            timer?.invalidate()
-            timer = nil
-            isRunning = false
-            if isBreakTime {
-                timeRemaining = workDuration
-                isBreakTime = false
-            }else{
-                timeRemaining = breakDuration
-                isBreakTime = true
-            }
-        }
-        
     }
+    
+}
 
