@@ -46,9 +46,9 @@ struct ContentView: View{
                             Text(dynamicStartButtonText)
                         }
                     }
-                    .font(.title)
+                    .font(.title2)
                     .padding()
-                    .frame(width: 220)
+                    .frame(width: 180)
                     .background(isRunning ? Color.white : Color.black)
                     .foregroundStyle(isRunning ? Color.black : Color.white)
                     .cornerRadius(10)
@@ -56,28 +56,30 @@ struct ContentView: View{
                 
                 Spacer()
                 
-                Button {
-                    resetTimer()
-                }label: {
-                    HStack{
-                        Image(systemName: "arrow.clockwise")
-                        Text("Reset")
+                HStack{
+                    Button {
+                        resetTimer()
+                    }label: {
+                        HStack{
+                            Image(systemName: "arrow.clockwise")
+                            Text("Reset")
+                        }
+                        .font(.title2)
+                        .frame(width: 150)
+                        .foregroundStyle(isRunning ? Color.white : Color.black)
                     }
-                    .font(.title2)
-                    .frame(width: 150)
-                    .foregroundStyle(isRunning ? Color.white : Color.black)
-                }
-                
-                Button {
-                    skipTimer()
-                }label: {
-                    HStack{
-                        Image(systemName: "arrowshape.zigzag.right")
-                        Text("Skip")
+                    
+                    Button {
+                        skipTimer()
+                    }label: {
+                        HStack{
+                            Image(systemName: "forward.end")
+                            Text("Skip")
+                        }
+                        .font(.title2)
+                        .frame(width: 150)
+                        .foregroundStyle(isRunning ? Color.white : Color.black)
                     }
-                    .font(.title2)
-                    .frame(width: 150)
-                    .foregroundStyle(isRunning ? Color.white : Color.black)
                 }
                 
             }

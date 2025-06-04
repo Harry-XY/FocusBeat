@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct SettingsView: View {
+    @AppStorage("workDuration_seconds") var workDuration: Int = 25 * 60
+    @AppStorage("breakDuration_seconds") var breakDuration: Int = 5 * 60
     @Environment(\.dismiss) var dismiss // 用于关闭 sheet
     
     var body: some View {
