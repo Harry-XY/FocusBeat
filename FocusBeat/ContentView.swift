@@ -19,69 +19,17 @@ struct ContentView: View{
     var body: some View {
         NavigationStack{
             VStack {
-                Text("Focus Beat")
-                    .font(.title)
-                    .bold()
-                    .foregroundStyle(isRunning ? Color.white : Color.black)
+                Header
                 
                 Spacer()
                 
-                Text(currentModeText)
-                    .font(.system(size: 30, weight: .bold, design: .monospaced))
-                    .foregroundStyle(isRunning ? Color.white : Color.black)
+                TimeZone
                 
-                Text(formatTime(timeRemaining))
-                    .font(.system(size: 64, weight: .bold, design: .monospaced))
-                    .foregroundStyle(isRunning ? Color.white : Color.black)
-                
-                Button {
-                    startTimer()
-                }label: {
-                    HStack{
-                        if isRunning{
-                            Image(systemName: "pause")
-                            Text(dynamicStartButtonText)
-                        }else{
-                            Image(systemName: "play")
-                            Text(dynamicStartButtonText)
-                        }
-                    }
-                    .font(.title2)
-                    .padding()
-                    .frame(width: 180)
-                    .background(isRunning ? Color.white : Color.black)
-                    .foregroundStyle(isRunning ? Color.black : Color.white)
-                    .cornerRadius(10)
-                }
+                StartButton
                 
                 Spacer()
                 
-                HStack{
-                    Button {
-                        resetTimer()
-                    }label: {
-                        HStack{
-                            Image(systemName: "arrow.clockwise")
-                            Text("Reset")
-                        }
-                        .font(.title2)
-                        .frame(width: 150)
-                        .foregroundStyle(isRunning ? Color.white : Color.black)
-                    }
-                    
-                    Button {
-                        skipTimer()
-                    }label: {
-                        HStack{
-                            Image(systemName: "forward.end")
-                            Text("Skip")
-                        }
-                        .font(.title2)
-                        .frame(width: 150)
-                        .foregroundStyle(isRunning ? Color.white : Color.black)
-                    }
-                }
-                
+                ResetSkipButtons
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(isRunning ? Color.black : Color.white)
@@ -98,6 +46,18 @@ struct ContentView: View{
                     }
                 }
             }
+            .onChange(of: workDuration) { oldValue, newValue in
+                // 当 workDuration (专注时长设置) 改变时
+                if !isRunning && !isBreakTime { // 如果计时器未运行，且当前是专注模式
+                    self.timeRemaining = newValue // 更新 timeRemaining 为新的专注时长
+                }
+            }
+            .onChange(of: breakDuration) { oldValue, newValue in
+                // 当 breakDuration (休息时长设置) 改变时
+                if !isRunning && isBreakTime { // 如果计时器未运行，且当前是休息模式
+                    self.timeRemaining = newValue // 更新 timeRemaining 为新的休息时长
+                }
+            }
         }
     }
 }
@@ -107,6 +67,26 @@ struct ContentView: View{
     }
     
     extension ContentView {
+        private var Header: some View {
+            Text("Focus Beat")
+                .font(.title)
+                .bold()
+                .foregroundStyle(isRunning ? Color.white : Color.black)
+        }
+        
+        private var TimeZone: some View{
+            VStack{
+                Text(currentModeText)
+                    .font(.system(size: 30, weight: .bold, design: .monospaced))
+                    
+                
+                Text(formatTime(timeRemaining))
+                    .font(.system(size: 64, weight: .bold, design: .monospaced))
+            }
+                .foregroundStyle(isRunning ? Color.white : Color.black)
+        }
+        
+        
         var currentModeText: String {
             if isBreakTime {
                 return "BREAK"
@@ -114,6 +94,37 @@ struct ContentView: View{
                 return "FOCUS"
             }
         }
+        
+        
+        
+        func formatTime(_ seconds: Int) -> String {
+            let minutes = seconds / 60
+            let secs = seconds % 60
+            return String(format: "%02d:%02d", minutes, secs)
+        }
+        //MARK: -Start
+        private var StartButton: some View{
+            Button {
+                startTimer()
+            }label: {
+                HStack{
+                    if isRunning{
+                        Image(systemName: "pause")
+                        Text(dynamicStartButtonText)
+                    }else{
+                        Image(systemName: "play")
+                        Text(dynamicStartButtonText)
+                    }
+                }
+                .font(.title2)
+                .padding()
+                .frame(width: 180)
+                .background(isRunning ? Color.white : Color.black)
+                .foregroundStyle(isRunning ? Color.black : Color.white)
+                .cornerRadius(10)
+            }
+        }
+        
         
         var dynamicStartButtonText: String {
             if isRunning {
@@ -125,12 +136,6 @@ struct ContentView: View{
                     return "Start Focus"
                 }
             }
-        }
-        
-        func formatTime(_ seconds: Int) -> String {
-            let minutes = seconds / 60
-            let secs = seconds % 60
-            return String(format: "%02d:%02d", minutes, secs)
         }
         
         func startTimer() {
@@ -165,6 +170,36 @@ struct ContentView: View{
                             }
                         }
                     }
+                }
+            }
+        }
+        
+        //MARK: -RestAndSkip
+        
+        private var ResetSkipButtons: some View {
+            HStack{
+                Button {
+                    resetTimer()
+                }label: {
+                    HStack{
+                        Image(systemName: "arrow.clockwise")
+                        Text("Reset")
+                    }
+                    .font(.title2)
+                    .frame(width: 150)
+                    .foregroundStyle(isRunning ? Color.white : Color.black)
+                }
+                
+                Button {
+                    skipTimer()
+                }label: {
+                    HStack{
+                        Image(systemName: "forward.end")
+                        Text("Skip")
+                    }
+                    .font(.title2)
+                    .frame(width: 150)
+                    .foregroundStyle(isRunning ? Color.white : Color.black)
                 }
             }
         }
