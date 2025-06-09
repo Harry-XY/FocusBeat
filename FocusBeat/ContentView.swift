@@ -9,7 +9,7 @@ import SwiftUI
 import UserNotifications 
 
 struct ContentView: View{
-    @State private var timeRemaining = 25 * 60
+    @State private var timeRemaining: Int
     @State private var isRunning = false
     @State private var timer: Timer? = nil
     @State private var isBreakTime = false
@@ -18,6 +18,21 @@ struct ContentView: View{
     @State private var heartBeatAnimation = false
     @AppStorage("workDuration_seconds") var workDuration = 25 * 60
     @AppStorage("breakDuration_seconds") var breakDuration = 5 * 60
+    
+    init() {
+        // 1. 直接从 UserDefaults 中读取我们存储的值
+        //    我们使用的键 "workDuration_seconds" 必须和 @AppStorage 中的完全一样
+        let savedDuration = UserDefaults.standard.integer(forKey: "workDuration_seconds")
+        
+        // 2. 判断是否成功读取到了有效值
+        //    如果 savedDuration 大于 0，说明我们读到了之前保存的值
+        //    否则 (比如第一次启动应用，还没有任何存储)，我们就使用默认值 25 * 60
+        let initialDuration = (savedDuration > 0) ? savedDuration : (25 * 60)
+        
+        // 3. 用这个正确的初始值来初始化 _timeRemaining
+        //    这和我们最开始学习 init() 的用法是一样的
+        _timeRemaining = State(initialValue: initialDuration)
+    }
     
     var body: some View {
         NavigationStack{
@@ -225,10 +240,13 @@ extension ContentView {
                             // TODO: 设置为专注时间
                             timeRemaining = workDuration // 准备下一个专注时间
                             isBreakTime = false          // 切换到专注模式
+                            scheduleLocalNotification(title: "Break's Over! ", body: "Ready to get back to focus? Let's do this! ")
+                            
                         } else { // 如果当前是专注时间 (意味着专注结束了)
                             // TODO: 设置为休息时间
                             timeRemaining = breakDuration // 准备下一个休息时间
                             isBreakTime = true           // 切换到休息模式
+                            scheduleLocalNotification(title: "Focus Complete!", body: "Time for a well-deserved break")
                         }
                     }
                 }
@@ -268,6 +286,7 @@ extension ContentView {
     }
     
     func resetTimer() {
+        UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
         timer?.invalidate()
         timer = nil
         isRunning = false
@@ -276,6 +295,7 @@ extension ContentView {
     }
     
     func skipTimer() {
+        UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
         timer?.invalidate()
         timer = nil
         isRunning = false
