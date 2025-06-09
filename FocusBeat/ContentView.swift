@@ -161,10 +161,6 @@ extension ContentView {
             // 我们通过设置之前创建的 alertInfo 状态变量来做到这一点
             self.alertInfo = AlertInfo(title: title, message: message)
         }
-//            else {
-//            // 如果 App 在后台或非活跃状态，发送我们之前创建的系统通知
-//            scheduleLocalNotification(title: title, body: message)
-//        }
     }
     
     // MARK: - Session End Handler

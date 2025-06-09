@@ -13,8 +13,6 @@ struct HistoryView: View {
     var body: some View {
         NavigationStack { // 或者 NavigationView
             VStack {
-                Text("番茄钟历史记录将会显示在这里")
-                    .padding()
                 Spacer()
             }
             .navigationTitle("History")
