@@ -41,12 +41,12 @@ struct SettingsView: View {
         NavigationStack {
             Form{
                 Section(header: Text("TIMER")) {
-                    Picker("Focus Duration", selection: workMinutesBinding) { // <--- 使用我们新的 binding
+                    Picker("Focus Duration", selection: workMinutesBinding) {
                         ForEach(1...60, id: \.self) { minute in
                             Text("\(minute) minute\(minute == 1 ? "" : "s")").tag(minute)
                         }
                     }
-                    .pickerStyle(.menu) // <-- 应用滚轮样式
+                    .pickerStyle(.menu) 
                     
                     Picker("Break Duration", selection: breakMinutesBinding) {
                         ForEach(1...30, id: \.self) { minute in
@@ -59,17 +59,17 @@ struct SettingsView: View {
                 
                 Section {
                     Button("Restore Defaults", role: .destructive) {
-                        workDuration = 25 * 60  // <-- 恢复默认的动作
+                        workDuration = 25 * 60
                         breakDuration = 5 * 60
                     }
                     .frame(maxWidth: .infinity, alignment: .center)
                 }
             }
-            .navigationTitle("Settings") // 给设置页面一个标题
+            .navigationTitle("Settings")
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) { // 或者 .navigationBarTrailing
+                ToolbarItem(placement: .topBarTrailing) {
                     Button("Done") {
-                        dismiss() // 点击“完成”按钮时关闭这个 sheet
+                        dismiss()
                     }
                 }
             }

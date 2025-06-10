@@ -6,7 +6,7 @@
 //
 
 import SwiftUI
-import UserNotifications 
+import UserNotifications
 
 struct AlertInfo: Identifiable {
     let id = UUID() // Identifiable 协议要求
@@ -27,19 +27,18 @@ struct ContentView: View{
     @State private var alertInfo: AlertInfo?
     @Environment(\.scenePhase) private var scenePhase
     @State private var endDate: Date?
+    @StateObject private var watchService = WatchConnectivityService() 
+    
     
     init() {
         // 1. 直接从 UserDefaults 中读取我们存储的值
         //    我们使用的键 "workDuration_seconds" 必须和 @AppStorage 中的完全一样
         let savedDuration = UserDefaults.standard.integer(forKey: "workDuration_seconds")
         
-        // 2. 判断是否成功读取到了有效值
-        //    如果 savedDuration 大于 0，说明我们读到了之前保存的值
-        //    否则 (比如第一次启动应用，还没有任何存储)，我们就使用默认值 25 * 60
+        // 2. 判断是否成功读取到了有效值，不然使用默认
         let initialDuration = (savedDuration > 0) ? savedDuration : (25 * 60)
         
         // 3. 用这个正确的初始值来初始化 _timeRemaining
-        //    这和我们最开始学习 init() 的用法是一样的
         _timeRemaining = State(initialValue: initialDuration)
     }
     
@@ -47,14 +46,16 @@ struct ContentView: View{
         NavigationStack{
             VStack {
                 HeartBeat
-                
                 Spacer()
-                
                 TimeZone
-                
                 StartButton
-                
                 Spacer()
+                Button("Send Message to Watch") {
+                    let message = ["text": "Hello from iPhone!"]
+                    // 调用我们 service 中的方法来发送消息
+                    watchService.sendMessage(message)
+                }
+                .padding()
                 
                 ResetSkipButtons
             }
@@ -82,11 +83,10 @@ struct ContentView: View{
                         let remaining = Int(endDate.timeIntervalSinceNow.rounded())
                         
                         if remaining <= 0 {
-                            // 如果计算后发现时间其实在后台时就已经结束了
-                            // 我们就直接调用会话结束处理函数
+                            //如果计算后发现时间其实在后台时就已经结束了，就直接调用会话结束处理函数
                             self.handleSessionEnd()
                         } else {
-                            // 如果时间还没结束，就用正确的时间更新UI，实现“赶上”进度
+                            //如果时间还没结束，就用正确的时间更新UI，实现“赶上”进度
                             self.timeRemaining = remaining
                         }
                     }
@@ -185,10 +185,16 @@ extension ContentView {
     //MARK: -StartTimer
     func startTimer() {
         if isRunning {
+            // 1. 取消所有已预定的后台通知
+            UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
+            
+            // 2. 停止 UI 计时器
             timer?.invalidate()
-            //.invalidate()：是 Timer 类型的方法，表示“使这个 Timer 失效”，也就是停止计时器。
             timer = nil
             isRunning = false
+            
+            // 3. 清除结束时间点，因为计时已经暂停
+            endDate = nil
         } else {
             isRunning = true
             self.endDate = Date().addingTimeInterval(TimeInterval(timeRemaining))
@@ -260,7 +266,7 @@ extension ContentView {
         }
     }
     
-    // MARK: - Beating Heart
+    // MARK: -Beating Heart
     private var HeartBeat: some View {
         HStack{
             Image(systemName: "heart.fill")
@@ -282,7 +288,6 @@ extension ContentView {
     }
     
     //MARK: -TimeZone
-    
     private var TimeZone: some View{
         VStack{
             Text(currentModeText)
@@ -294,7 +299,6 @@ extension ContentView {
         .foregroundStyle(isRunning ? Color.white : Color.black)
     }
     
-    
     var currentModeText: String {
         if isBreakTime {
             return "BREAK"
@@ -302,8 +306,6 @@ extension ContentView {
             return "FOCUS"
         }
     }
-    
-    
     
     func formatTime(_ seconds: Int) -> String {
         let minutes = seconds / 60
@@ -393,4 +395,3 @@ extension ContentView {
         handleSessionEnd()
     }
 }
-

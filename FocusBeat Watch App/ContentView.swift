@@ -8,12 +8,17 @@
 import SwiftUI
 
 struct ContentView: View {
+    @StateObject private var watchService = WatchConnectivityService()
+    
     var body: some View {
         VStack {
-            Image(systemName: "globe")
+            Image(systemName: "applewatch.and.arrow.left.and.right") // 换个应景的图标
                 .imageScale(.large)
                 .foregroundStyle(.tint)
-            Text("Hello, world!")
+            
+            // 直接显示来自 watchService 的 receivedMessage 属性
+            Text(watchService.receivedMessage)
+                .padding()
         }
         .padding()
     }
