@@ -8,7 +8,6 @@
 import Foundation
 import WatchConnectivity
 
-// 最终的、完整的 iPhone 端通信服务
 
 class WatchConnectivityService: NSObject, WCSessionDelegate, ObservableObject {
     
