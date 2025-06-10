@@ -166,21 +166,19 @@ extension ContentView {
     // MARK: - Session End Handler
     private func handleSessionEnd() {
         // 1. 停止计时器
-        self.isRunning = false
-        self.timer?.invalidate()
-        self.endDate = nil // 清除结束时间
+        isRunning = false
+        timer?.invalidate()
+        endDate = nil // 清除结束时间
         
-        // 2. 判断上一个会话是什么类型，并触发对应的提醒
-        if self.isBreakTime { // 如果一个休息时段刚刚结束
-            self.triggerEndOfSessionActions(forPreviousSessionIsBreak: true)
-            // 3. 为下一个专注时段设置时间
-            self.timeRemaining = self.workDuration
-            self.isBreakTime = false
-        } else { // 如果一个专注时段刚刚结束
-            self.triggerEndOfSessionActions(forPreviousSessionIsBreak: false)
-            // 3. 为下一个休息时段设置时间
-            self.timeRemaining = self.breakDuration
-            self.isBreakTime = true
+        // 2. 判断上一个会话是什么类型...
+        if isBreakTime {
+            triggerEndOfSessionActions(forPreviousSessionIsBreak: true)
+            timeRemaining = workDuration
+            isBreakTime = false
+        } else {
+            triggerEndOfSessionActions(forPreviousSessionIsBreak: false)
+            timeRemaining = breakDuration
+            isBreakTime = true
         }
     }
     
@@ -392,18 +390,7 @@ extension ContentView {
     
     func skipTimer() {
         UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
-        timer?.invalidate()
-        timer = nil
-        endDate = nil
-        isRunning = false
-        if isBreakTime {
-            timeRemaining = workDuration
-            isBreakTime = false
-        }else{
-            timeRemaining = breakDuration
-            isBreakTime = true
-        }
+        handleSessionEnd()
     }
-    
 }
 
