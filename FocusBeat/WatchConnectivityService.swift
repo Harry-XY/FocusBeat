@@ -43,24 +43,28 @@ class WatchConnectivityService: NSObject, WCSessionDelegate, ObservableObject {
             return
         }
         
-        session.sendMessage(message, replyHandler: nil) { error in
-            // 我们换一种不使用 if let 的检查方式
-            if error != nil {
-                // 如果 error 不是 nil，我们已经确认它有值
-                // 所以在这里用感叹号 ! 来强制解包是安全的
-                print("Error sending message: \(error!.localizedDescription)")
-            } else {
-                print("Message sent successfully from iPhone: \(message)")
-            }
-        }
+        // 正确的写法：分别提供成功和失败的处理代码
+        session.sendMessage(message, replyHandler: { _ in
+            // 这个代码块只在消息【成功】发送后执行
+            // 注意：这里的 replyHandler 是可选的，如果你的 Watch App 不需要回复，
+            // 那么这个 replyHandler 甚至可以不写。
+            // 为了简单起见，我们假设成功就是成功，直接打印。
+            print("Message sent successfully from iPhone: \(message)")
+            
+        }, errorHandler: { error in
+            // 这个代码块只在消息【发送失败】时执行
+            // 这里的 'error' 是一个确定的 Error，不是可选的，所以直接使用。
+            print("sendMessage failed with error: \(error.localizedDescription)")
+        })
     }
     
     // MARK: - WCSessionDelegate Methods
     
     // 当会话激活完成时调用 (在iOS上必须实现)
     func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {
-        if error != nil {
-            print("WCSession activation failed on iPhone with error: \(error!.localizedDescription)")
+        if let error = error {
+            // 直接执行操作，因为我们已经知道 error 肯定存在
+            print("WCSession (iPhone) activation failed: \(error.localizedDescription)")
             return
         }
         
