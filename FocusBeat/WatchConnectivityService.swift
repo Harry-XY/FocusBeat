@@ -44,8 +44,11 @@ class WatchConnectivityService: NSObject, WCSessionDelegate, ObservableObject {
         }
         
         session.sendMessage(message, replyHandler: nil) { error in
-            if let error = error {
-                print("sendMessage failed with error: \(error.localizedDescription)")
+            // 我们换一种不使用 if let 的检查方式
+            if error != nil {
+                // 如果 error 不是 nil，我们已经确认它有值
+                // 所以在这里用感叹号 ! 来强制解包是安全的
+                print("Error sending message: \(error!.localizedDescription)")
             } else {
                 print("Message sent successfully from iPhone: \(message)")
             }
@@ -56,8 +59,8 @@ class WatchConnectivityService: NSObject, WCSessionDelegate, ObservableObject {
     
     // 当会话激活完成时调用 (在iOS上必须实现)
     func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {
-        if let error = error {
-            print("WCSession (iPhone) activation failed: \(error.localizedDescription)")
+        if error != nil {
+            print("WCSession activation failed on iPhone with error: \(error!.localizedDescription)")
             return
         }
         
